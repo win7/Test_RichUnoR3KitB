@@ -16,7 +16,8 @@ const int water_pin = A2;
 //prepare pole 
 uint16_t samples[NUMSAMPLES];
 
-const int pir_pin = 3;
+const int pin_buzzer = 2;
+// const int pir_pin = 3;
 const int wire_pin = 5;
 const int recv_pin = 6;
 const int echo_pin = 7;
@@ -42,7 +43,7 @@ void setup() {
   // initialize serial communications at 9600 bps:
   Serial.begin(9600);
 
-  pinMode(pir_pin, INPUT);
+  // pinMode(pir_pin, INPUT);
 
   pinMode(trigger_pin, OUTPUT);
   pinMode(echo_pin, INPUT);
@@ -56,15 +57,20 @@ void setup() {
 }
 
 void loop() {
-  lcd.clear();
+  //lcd.clear();
   
   // Light
   light_value = analogRead(light_pin);
   light_map = map(light_value, 0, 1023, 0, 100);
   // Serial.println(light_map);
-  lcd.setCursor(8, 0);
+  lcd.setCursor(9, 0);
   lcd.print("Lig:");
-  lcd.print(light_map);
+  lcd.print(format_value(light_map));
+  if (light_map > 50) {
+    digitalWrite(led_pin, LOW);
+  } else {
+    digitalWrite(led_pin, HIGH);
+  }
   
   // HC-SR04
   digitalWrite(trigger_pin, HIGH);
@@ -77,9 +83,9 @@ void loop() {
   Serial.print(distance);
   Serial.print("cm");
   Serial.println(); */
-  lcd.setCursor(8, 1);
+  lcd.setCursor(9, 1);
   lcd.print("Dis:");
-  lcd.print(distance);
+  lcd.print(format_value(distance));
 
   // Water
   water_value = analogRead(water_pin);
@@ -95,12 +101,18 @@ void loop() {
   }
   lcd.setCursor(0, 1);
   lcd.print("Wat:");
-  lcd.print(water_map);
+  lcd.print(format_value(water_map));
 
   // temperature
   temperature_value = int(get_temperature());
-  Serial.print("Temperature: "); 
-  Serial.println(temperature_value);
+  // Serial.print("Temperature: "); 
+  // Serial.println(temperature_value);
+  lcd.setCursor(0, 0);
+  lcd.print("Tem:");
+  lcd.print(format_value(temperature_value));
+  if (temperature_value > 30 || temperature_value < 0) {
+    tone(pin_buzzer, 330, 100);
+  }
   
   // converter to settle after the last reading:
   delay(1000);
@@ -113,7 +125,7 @@ float get_temperature() {
    delay(10);
   }
  
-   // average value of input
+  // average value of input
   average = 0;
   for (i=0; i< NUMSAMPLES; i++) {
      average += samples[i];
@@ -133,4 +145,14 @@ float get_temperature() {
   temperature = 1.0 / temperature;                 
   temperature -= 273.15;                         // convert to C
   return temperature;
+}
+
+String format_value(int value) {
+  String value_ = String(value);
+  int length_ = value_.length();
+  for (int i = length_; i <= 3; i++) {
+    value_ += " ";
+  }
+  value_ = value_.substring(0, 3);
+  return value_;
 }
